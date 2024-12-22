@@ -1,19 +1,18 @@
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
-from telegram import ParseMode
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
 
 # Function to handle the /start command
-async def start(update: Update, context):
+def start(update: Update, context: CallbackContext):
     user_first_name = update.message.from_user.first_name
     greeting_message = f"Hello, {user_first_name}! 🎉\nWelcome to the Stylish Bot.\n\nHere are the commands you can use:\n\n"
     greeting_message += "/start - Start interacting with the bot.\n"
     greeting_message += "/send_message - Send a message to a specific user using their chat_id.\n"
     greeting_message += "/help - View all available commands and their descriptions.\n"
-    await update.message.reply_text(greeting_message)
+    update.message.reply_text(greeting_message)
 
-# Function to handle the /send_message command
-async def send_message_to_user(update: Update, context):
-    user_chat_id = 7679286299  # Example chat_id, replace with actual chat_id
+# Function to send a message to the user using their chat_id
+def send_message_to_user(update: Update, context: CallbackContext):
+    user_chat_id = 7679286299  # Chat ID of the user you want to send the message to
     message = """✨ *Hello!* ✨
     This is a message from your bot.
     
@@ -22,13 +21,13 @@ async def send_message_to_user(update: Update, context):
     Use commands like /start to interact with me.
     """
     # Send a stylish message to the user
-    await context.bot.send_message(chat_id=user_chat_id, text=message, parse_mode=ParseMode.MARKDOWN)
+    context.bot.send_message(chat_id=user_chat_id, text=message, parse_mode='Markdown')
 
     # Confirm message sent in the bot console
-    await update.message.reply_text("Your message was sent to the user successfully! 🚀")
+    update.message.reply_text("Your message was sent to the user successfully! 🚀")
 
 # Function to handle the /help command
-async def help(update: Update, context):
+def help(update: Update, context: CallbackContext):
     help_message = """*Bot Commands:*
     
     /start - Start interacting with the bot. You'll get a greeting and introduction to commands.
@@ -41,32 +40,37 @@ async def help(update: Update, context):
     - Feel free to chat with me! I'll echo any message you send.
     - Use Markdown formatting in your messages to make them more stylish! Try it out! 💬
     """
-    await update.message.reply_text(help_message, parse_mode=ParseMode.MARKDOWN)
+    update.message.reply_text(help_message, parse_mode='Markdown')
 
 # Function to handle messages (echo the user's text)
-async def echo(update: Update, context):
-    await update.message.reply_text(f"💬 You said: {update.message.text}\n\nFeel free to try again!")
+def echo(update: Update, context: CallbackContext):
+    update.message.reply_text(f"💬 You said: {update.message.text}\n\nFeel free to try again!")
 
 # Main function to set up the bot
-async def main():
+def main():
     # Replace 'YOUR_API_TOKEN' with your bot's API token
-    application = Application.builder().token("YOUR_API_TOKEN").build()
+    updater = Updater("YOUR_API_TOKEN", use_context=True)
+
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
 
     # Add command handler for /start
-    application.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("start", start))
 
     # Add command handler for /send_message
-    application.add_handler(CommandHandler("send_message", send_message_to_user))
+    dp.add_handler(CommandHandler("send_message", send_message_to_user))
 
     # Add command handler for /help
-    application.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("help", help))
 
     # Add message handler to echo user messages
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
-    # Start the bot with polling
-    await application.run_polling()
+    # Start the bot
+    updater.start_polling()
+
+    # Run the bot until you press Ctrl+C
+    updater.idle()
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
